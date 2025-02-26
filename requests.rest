@@ -1,0 +1,51 @@
+POST http://localhost:3000/users/login
+Content-Type: application/json
+
+{
+    "username": "user1",
+    "password": "password"
+}
+
+###
+
+POST http://localhost:3000/cash
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+
+### 
+
+POST http://localhost:3000/cash/e82761e1-e50d-11ef-8564-0242ac110002
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+
+###
+
+POST http://localhost:3000/cash/add
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+
+{
+    "amount": 5000
+}
+
+###
+
+PUT http://localhost:3000/cash/update
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+
+{
+    "cashflowId": "e82761e1-e50d-11ef-8564-0252ac110002",
+    "amount": 150,
+    "description": "Updated cashflow"
+}
+
+###
+
+DELETE http://localhost:3000/cash/delete
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+
+{
+    "cashflowId": "512c7eb8-f40b-11ef-a2b2-0242ac110002"
+}

@@ -1,0 +1,32 @@
+-- Create the wimm database 
+CREATE DATABASE IF NOT EXISTS wimm;
+
+-- Use the wimm database
+use wimm;
+
+-- Queries for initializing the database
+
+-- The user data
+-- Create the user_data table
+CREATE TABLE IF NOT EXISTS user_data (
+    id CHAR(36) NOT NULL DEFAULT (UUID()),  -- Using UUID() function in MySQL
+    user_name TEXT NOT NULL,
+    password_hash CHAR(60) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+
+-- The cashflow data
+-- Create the cashflow_data table
+CREATE TABLE IF NOT EXISTS cashflow_data (
+    id CHAR(36) NOT NULL DEFAULT (UUID()),  -- Using UUID() function in MySQL
+    user_id CHAR(36) NOT NULL,  -- Matching UUID format for the foreign key
+    value DECIMAL(12, 2) NOT NULL,
+    description TEXT,
+    date DATE NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user_data(id) ON DELETE CASCADE
+);
+
+-- Create a dummy user
+INSERT INTO user_data (user_name, password_hash) VALUES ('user1', '$2b$12$ZnOatuXNV4PlSGI63TXAS.VlAIBEc3CRnqb.GmSNBXdVkDzCJi9jW');
