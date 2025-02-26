@@ -1,3 +1,6 @@
+
+### Login
+# @name login
 POST http://localhost:3000/users/login
 Content-Type: application/json
 
@@ -7,32 +10,34 @@ Content-Type: application/json
 }
 
 ###
+@access_token = {{login.response.body.token}}
 
 POST http://localhost:3000/cash
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+Authorization: Bearer {{access_token}}
 
 ### 
 
 POST http://localhost:3000/cash/e82761e1-e50d-11ef-8564-0242ac110002
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+Authorization: Bearer {{access_token}}
 
 ###
 
 POST http://localhost:3000/cash/add
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+Authorization: Bearer {{access_token}}
 
 {
-    "amount": 5000
+    "amount": 5000,
+    "description": "New cashflow"
 }
 
 ###
 
 PUT http://localhost:3000/cash/update
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+Authorization: Bearer {{access_token}}
 
 {
     "cashflowId": "e82761e1-e50d-11ef-8564-0252ac110002",
@@ -44,7 +49,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZ
 
 DELETE http://localhost:3000/cash/delete
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwidXNlcklkIjoiNmRkZDJlZjYtZTQ0ZC0xMWVmLWFmNDItMDI0MmFjMTEwMDAyIiwiaWF0IjoxNzQwNTUzMTY0LCJleHAiOjE3NDA1NTY3NjR9.PH7bnE50Uuv6X887oyu1QapWDuUfhBRBw1W6x2EX5UM
+Authorization: Bearer {{access_token}}
 
 {
     "cashflowId": "512c7eb8-f40b-11ef-a2b2-0242ac110002"
