@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS cashflow_data (
     user_id CHAR(36) NOT NULL,  -- Matching UUID format for the foreign key
     value DECIMAL(12, 2) NOT NULL,
     description TEXT,
-    date DATE NOT NULL,
+    time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user_data(id) ON DELETE CASCADE
 );

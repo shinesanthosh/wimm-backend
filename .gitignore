@@ -1,7 +1,16 @@
+# node_modules
 node_modules
 
+# build artifacts
+dist
+
+# code editor settings
 .vscode
 
+
+# local env files excluding .env.example
 .env
 .env.*
+
+!.env.example
 
