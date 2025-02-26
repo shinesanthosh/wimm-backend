@@ -83,9 +83,10 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 15s
       retries: 3
+      start_period: 30s
     networks:
       - app-network
 
