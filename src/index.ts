@@ -4,10 +4,9 @@ import express, { Request, Response } from 'express'
 import userRoute from './routes/user'
 import cashRoute from './routes/cash'
 import db from './db'
-import { comparePassword, hashPassword } from './auth/crypto'
 import { authorizeMiddleware } from './auth'
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 
 app.use(express.json())
 

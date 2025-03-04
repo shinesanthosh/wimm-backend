@@ -1,14 +1,15 @@
 import { NextFunction, Request, Response } from 'express'
+import { login, register } from './authentication'
+import { getToken, verifyToken } from './authorization'
+import { JwtPayload } from 'jsonwebtoken'
+import { tryCatch } from '../utils/errorHandlers'
+import { getUser } from '../services/user'
 
 declare module 'express-serve-static-core' {
   interface Request {
     user?: string | JwtPayload
   }
 }
-import { login, register } from './authentication'
-import { getToken, verifyToken } from './authorization'
-import { User } from '../models/user'
-import { JwtPayload } from 'jsonwebtoken'
 
 const authenticate = async (username: string, password: string) => {
   const user = await login(username, password)
@@ -30,6 +31,7 @@ const authorizeMiddleware = async (
 ) => {
   const tokenCookie = req.cookies?.token?.split(' ')[1]
 
+  // check if the token is in the cookie
   if (tokenCookie) {
     const decoded = await verifyToken(tokenCookie)
     if (decoded) req.user = decoded
@@ -37,6 +39,7 @@ const authorizeMiddleware = async (
     return
   }
 
+  // if not in the cookie, check if the token is in the headers
   const token = req.headers.authorization?.split(' ')[1]
   if (!token) {
     res.status(401).send('Unauthorized')
@@ -47,6 +50,15 @@ const authorizeMiddleware = async (
     res.status(401).send('Unauthorized')
     return
   }
+
+  // once the token is verified, check if the user exists
+  const user = await tryCatch(getUser, (decoded as JwtPayload).userId)
+
+  if (!user) {
+    res.status(401).send('Unauthorized')
+    return
+  }
+
   req.user = decoded
   next()
 }

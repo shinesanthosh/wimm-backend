@@ -2,7 +2,7 @@ import db from '../db'
 
 export const getUser = async (userId: string) => {
   const [rows]: any = await db.execute(
-    'SELECT id,username FROM user_data WHERE id = ?',
+    'SELECT id,user_name FROM user_data WHERE id = ?',
     [userId]
   )
   if (rows.length === 0) {
