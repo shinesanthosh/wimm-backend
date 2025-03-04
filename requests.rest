@@ -1,7 +1,7 @@
-
+@host = http://localhost:3010
 ### Login
 # @name login
-POST http://localhost:3000/users/login
+POST {{host}}/users/login
 Content-Type: application/json
 
 {
@@ -12,30 +12,30 @@ Content-Type: application/json
 ###
 @access_token = {{login.response.body.token}}
 
-POST http://localhost:3000/cash
+POST {{host}}/cash
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
 ### 
 
-POST http://localhost:3000/cash/e82761e1-e50d-11ef-8564-0242ac110002
+POST {{host}}/cash/e82761e1-e50d-11ef-8564-0242ac110002
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
 ###
 
-POST http://localhost:3000/cash/add
+POST {{host}}/cash/add
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
 {
-    "amount": 5000,
+    "amount": 520,
     "description": "New cashflow"
 }
 
 ###
 
-PUT http://localhost:3000/cash/update
+PUT {{host}}/cash/update
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
@@ -47,7 +47,7 @@ Authorization: Bearer {{access_token}}
 
 ###
 
-DELETE http://localhost:3000/cash/delete
+DELETE {{host}}/cash/delete
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
