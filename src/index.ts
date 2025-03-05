@@ -26,7 +26,7 @@ app.get('*', (req: Request, res: Response) => {
   res.status(404).send('Not found')
 })
 
-app.use('/users', userRoute)
+app.use('/user', userRoute)
 app.use('/cash', authorizeMiddleware, cashRoute)
 
 app.listen(port, () => {
