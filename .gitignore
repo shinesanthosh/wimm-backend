@@ -1,16 +1,10 @@
-# node_modules
-node_modules
-
-# build artifacts
-dist
-
-# code editor settings
-.vscode
-
-
-# local env files excluding .env.example
-.env
-.env.*
-
+node_modules/
+dist/
+.env*
 !.env.example
-
+logs/
+coverage/
+*.log
+.DS_Store
+.vscode/
+.idea/
