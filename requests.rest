@@ -1,3 +1,4 @@
+# @host =https://wimm-backend-1095157595506.us-central1.run.app:3000
 @host = http://localhost:3010
 ### Login
 # @name login

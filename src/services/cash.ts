@@ -80,7 +80,7 @@ export const updateCashflow = async (
 
   if (date !== undefined) {
     updates.push('time = ?')
-    params.push(date)
+    params.push(new Date(date).toISOString().slice(0, 19).replace('T', ' '))
   }
 
   if (updates.length === 0) {

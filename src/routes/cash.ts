@@ -113,6 +113,12 @@ app.post('/:cashflowId', async (req: Request, res: Response) => {
   }
 
   const cashflow = await tryCatch(getCashflow, userId, cashflowId)
+  if (!cashflow) {
+    res
+      .status(400)
+      .json(`Cashflow with ID ${cashflowId} not found for user ${userId}`)
+    return
+  }
 
   res.send(cashflow)
 })
