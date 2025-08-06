@@ -1,5 +1,3 @@
-// The cashflow routes
-
 import express, { Request, Response } from 'express'
 import {
   addCashflow,
@@ -9,145 +7,312 @@ import {
   updateCashflow,
 } from '../services/cash'
 import { extractAuthorizedUserId } from '../auth'
-import { errorLog, tryCatch, warnLog } from '../utils/errorHandlers'
+import { asyncHandler } from '../utils/errorHandlers'
+import { validateRequest } from '../middleware/validation'
+import {
+  addCashflowSchema,
+  getCashflowSchema,
+  paginationSchema,
+} from '../validation/schemas'
+import { AuthorizationError, NotFoundError } from '../utils/errors'
+import { ApiResponse, PaginatedResponse } from '../types/api'
 
-const app = express.Router()
+const router = express.Router()
 
-// Get all cashflows
-app.post('/', async (req: Request, res: Response) => {
-  const userId = extractAuthorizedUserId(req)
+/**
+ * @swagger
+ * /cash:
+ *   get:
+ *     summary: Get all cashflows for the authenticated user
+ *     tags: [Cashflow]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: Cashflows retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         cashflows:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Cashflow'
+ *                         total:
+ *                           type: number
+ *                         count:
+ *                           type: integer
+ */
+router.get(
+  '/',
+  validateRequest(paginationSchema, 'query'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = extractAuthorizedUserId(req)
+    if (!userId) {
+      throw new AuthorizationError()
+    }
 
-  if (!userId) {
-    res.status(401).send('Unauthorized')
-    warnLog('Unauthorized request attempted; no user ID found; at /cash/ ')
-    return
-  }
+    const { page, limit } = req.query as any
+    const cashflows = await getCashflows(userId, { page, limit })
 
-  const cashflows = await tryCatch(getCashflows, userId)
-  res.send(cashflows)
-})
+    if (!cashflows) {
+      throw new Error('Failed to retrieve cashflows')
+    }
 
-// Add a new cashflow
-app.post('/add', async (req: Request, res: Response) => {
-  const { amount, description, date } = req.body
+    const response: PaginatedResponse = {
+      success: true,
+      data: cashflows,
+      pagination: {
+        page,
+        limit,
+        total: cashflows.count,
+        totalPages: Math.ceil(cashflows.count / limit),
+      },
+    }
 
-  const userId = extractAuthorizedUserId(req)
+    res.json(response)
+  })
+)
 
-  if (!userId) {
-    res.status(401).send('Unauthorized')
-    warnLog('Unauthorized request attempted; no user ID found; at /cash/add')
-    return
-  }
+/**
+ * @swagger
+ * /cash:
+ *   post:
+ *     summary: Add a new cashflow entry
+ *     tags: [Cashflow]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateCashflowRequest'
+ *     responses:
+ *       201:
+ *         description: Cashflow created successfully
+ *       400:
+ *         description: Invalid input data
+ */
+router.post(
+  '/',
+  validateRequest(addCashflowSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = extractAuthorizedUserId(req)
+    if (!userId) {
+      throw new AuthorizationError()
+    }
 
-  if (!amount) {
-    res.status(400).send('Amount is required')
-    return
-  }
-
-  const data = await tryCatch(
-    addCashflow,
-    userId,
-    amount,
-    description,
-    date ?? new Date().toISOString().slice(0, 19).replace('T', ' ')
-  )
-
-  res.send(data)
-})
-
-// Update an existing cashflow
-app.put('/update', async (req: Request, res: Response) => {
-  const { cashflowId, amount, description, date } = req.body
-
-  const userId = extractAuthorizedUserId(req)
-
-  if (!userId) {
-    res.status(401).send('Unauthorized')
-    warnLog('Unauthorized request attempted; no user ID found; at /cash/update')
-    return
-  }
-
-  if (!cashflowId) {
-    res.status(400).send('Cashflow ID is required')
-    return
-  }
-
-  const cashflow = await tryCatch(getCashflow, userId, cashflowId)
-
-  if (!cashflow) {
-    errorLog(
-      `Cannot update cashflow that does not exist: ${cashflowId} for user ${userId}`
+    const { amount, description, date } = req.body
+    const data = await addCashflow(
+      userId,
+      amount,
+      description,
+      date ?? new Date().toISOString()
     )
-    res.status(400).send('Cashflow not found')
-    return
-  }
 
-  const newAmount = amount ?? cashflow.value
-  const newDescription = description ?? cashflow.description
-  const newDate = date ?? cashflow.time
+    if (!data) {
+      throw new Error('Failed to create cashflow')
+    }
 
-  const newData = await tryCatch(
-    updateCashflow,
-    userId,
-    cashflowId,
-    newAmount,
-    newDescription,
-    newDate
-  )
+    const response: ApiResponse = {
+      success: true,
+      data,
+      message: 'Cashflow created successfully',
+    }
 
-  res.send(newData)
-})
+    res.status(201).json(response)
+  })
+)
 
-// Get a single cashflow
-app.post('/:cashflowId', async (req: Request, res: Response) => {
-  const { cashflowId } = req.params
+/**
+ * @swagger
+ * /cash/{cashflowId}:
+ *   get:
+ *     summary: Get a specific cashflow entry
+ *     tags: [Cashflow]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: cashflowId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Cashflow retrieved successfully
+ *       404:
+ *         description: Cashflow not found
+ */
+router.get(
+  '/:cashflowId',
+  validateRequest(getCashflowSchema, 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = extractAuthorizedUserId(req)
+    if (!userId) {
+      throw new AuthorizationError()
+    }
 
-  const userId = extractAuthorizedUserId(req)
+    const { cashflowId } = req.params
+    const cashflow = await getCashflow(userId, cashflowId)
 
-  if (!userId) {
-    res.status(401).send('Unauthorized')
-    warnLog(
-      'Unauthorized request attempted; no user ID found; at /cash/:cashflowId'
+    if (!cashflow) {
+      throw new NotFoundError(`Cashflow with ID ${cashflowId} not found`)
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      data: cashflow,
+    }
+
+    res.json(response)
+  })
+)
+
+/**
+ * @swagger
+ * /cash/{cashflowId}:
+ *   put:
+ *     summary: Update an existing cashflow entry
+ *     tags: [Cashflow]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: cashflowId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                 type: number
+ *               description:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Cashflow updated successfully
+ *       404:
+ *         description: Cashflow not found
+ */
+router.put(
+  '/:cashflowId',
+  validateRequest(getCashflowSchema, 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = extractAuthorizedUserId(req)
+    if (!userId) {
+      throw new AuthorizationError()
+    }
+
+    const { cashflowId } = req.params
+    const { amount, description, date } = req.body
+
+    // Check if cashflow exists
+    const existingCashflow = await getCashflow(userId, cashflowId)
+    if (!existingCashflow) {
+      throw new NotFoundError(`Cashflow with ID ${cashflowId} not found`)
+    }
+
+    const updatedData = await updateCashflow(
+      userId,
+      cashflowId,
+      amount,
+      description,
+      date
     )
-    return
-  }
 
-  const cashflow = await tryCatch(getCashflow, userId, cashflowId)
-  if (!cashflow) {
-    res
-      .status(400)
-      .json(`Cashflow with ID ${cashflowId} not found for user ${userId}`)
-    return
-  }
+    if (!updatedData) {
+      throw new Error('Failed to update cashflow')
+    }
 
-  res.send(cashflow)
-})
+    const response: ApiResponse = {
+      success: true,
+      data: updatedData,
+      message: 'Cashflow updated successfully',
+    }
 
-// Delete a cashflow
-app.delete('/delete', async (req: Request, res: Response) => {
-  const { cashflowId } = req.body
+    res.json(response)
+  })
+)
 
-  const userId = extractAuthorizedUserId(req)
+/**
+ * @swagger
+ * /cash/{cashflowId}:
+ *   delete:
+ *     summary: Delete a cashflow entry
+ *     tags: [Cashflow]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: cashflowId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Cashflow deleted successfully
+ *       404:
+ *         description: Cashflow not found
+ */
+router.delete(
+  '/:cashflowId',
+  validateRequest(getCashflowSchema, 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = extractAuthorizedUserId(req)
+    if (!userId) {
+      throw new AuthorizationError()
+    }
 
-  if (!userId) {
-    res.status(401).send('Unauthorized')
-    warnLog('Unauthorized request attempted; no user ID found; at /cash/delete')
-    return
-  }
+    const { cashflowId } = req.params
+    const result = await deleteCashflow(userId, cashflowId)
 
-  if (!cashflowId) {
-    res.status(400).send('Cashflow ID is required')
-    return
-  }
+    if (!result) {
+      throw new NotFoundError(`Cashflow with ID ${cashflowId} not found`)
+    }
 
-  const id = await tryCatch(deleteCashflow, userId, cashflowId)
+    const response: ApiResponse = {
+      success: true,
+      data: result,
+      message: 'Cashflow deleted successfully',
+    }
 
-  if (!id) {
-    res.status(400).send('Cashflow not found')
-    return
-  }
+    res.json(response)
+  })
+)
 
-  res.send(id)
-})
-
-export default app
+export default router
