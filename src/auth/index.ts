@@ -4,6 +4,7 @@ import { getToken, verifyToken } from './authorization'
 import { JwtPayload } from 'jsonwebtoken'
 import { tryCatch } from '../utils/errorHandlers'
 import { getUser } from '../services/user'
+import { isBlacklisted } from '../utils/tokenBlacklist'
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -29,36 +30,57 @@ const authorizeMiddleware = async (
   res: Response,
   next: NextFunction
 ) => {
-  const tokenCookie = req.cookies?.token?.split(' ')[1]
+  let token: string | undefined
+  let decoded: string | JwtPayload | null = null
 
-  // check if the token is in the cookie
+  // Check for token in cookie first
+  const tokenCookie = req.cookies?.token
   if (tokenCookie) {
-    const decoded = await verifyToken(tokenCookie)
-    if (decoded) req.user = decoded
-    next()
-    return
+    token = tokenCookie
+  } else {
+    // Check for token in Authorization header
+    token = req.headers.authorization?.split(' ')[1]
   }
 
-  // if not in the cookie, check if the token is in the headers
-  const token = req.headers.authorization?.split(' ')[1]
+  // If no token found, return unauthorized
   if (!token) {
-    res.status(401).send('Unauthorized')
+    res.status(401).json({
+      success: false,
+      error: 'No token provided',
+    })
     return
   }
-  const decoded = await verifyToken(token)
+
+  // Check if token is blacklisted
+  if (isBlacklisted(token)) {
+    res.status(401).json({
+      success: false,
+      error: 'Token has been revoked',
+    })
+    return
+  }
+
+  // Verify the token
+  decoded = await verifyToken(token)
   if (!decoded) {
-    res.status(401).send('Unauthorized')
+    res.status(401).json({
+      success: false,
+      error: 'Invalid or expired token',
+    })
     return
   }
 
-  // once the token is verified, check if the user exists
+  // Check if the user exists in the database
   const user = await tryCatch(getUser, (decoded as JwtPayload).userId)
-
   if (!user) {
-    res.status(401).send('Unauthorized')
+    res.status(401).json({
+      success: false,
+      error: 'User not found',
+    })
     return
   }
 
+  // Set user in request and continue
   req.user = decoded
   next()
 }

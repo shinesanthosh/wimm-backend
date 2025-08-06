@@ -10,7 +10,7 @@ export const getToken = async (username: string, userId: string) => {
   }
 
   const options: SignOptions = {
-    expiresIn: expiresIn,
+    expiresIn: expiresIn as StringValue,
   }
 
   if (username && userId && secret) {
