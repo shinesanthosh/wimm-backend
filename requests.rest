@@ -1,5 +1,15 @@
-# @host =https://wimm-backend-1095157595506.us-central1.run.app:3000
+# @host = https://wimm-backend-1095157595506.us-central1.run.app
 @host = http://localhost:3010
+
+### Health Check
+GET {{host}}/health
+
+### Readiness Check
+GET {{host}}/health/ready
+
+### API Documentation (Development only)
+GET {{host}}/api-docs
+
 ### Login
 # @name login
 POST {{host}}/user/login
@@ -10,48 +20,44 @@ Content-Type: application/json
     "password": "password"
 }
 
-###
-@access_token = {{login.response.body.token}}
+### Get current user info
+# @name userInfo
+GET {{host}}/user/me
+Authorization: Bearer {{login.response.body.data.token}}
 
+### Logout
+POST {{host}}/user/logout
+Authorization: Bearer {{login.response.body.data.token}}
+
+### Get all cashflows (with pagination)
+GET {{host}}/cash?page=1&limit=10
+Authorization: Bearer {{login.response.body.data.token}}
+
+### Get specific cashflow
+GET {{host}}/cash/b6dcfaaa-f431-11ef-be37-0242ac130002
+Authorization: Bearer {{login.response.body.data.token}}
+
+### Add new cashflow
 POST {{host}}/cash
 Content-Type: application/json
-Authorization: Bearer {{access_token}}
-
-### 
-
-POST {{host}}/cash/e82761e1-e50d-11ef-8564-0242ac110002
-Content-Type: application/json
-Authorization: Bearer {{access_token}}
-
-###
-
-POST {{host}}/cash/add
-Content-Type: application/json
-Authorization: Bearer {{access_token}}
+Authorization: Bearer {{login.response.body.data.token}}
 
 {
-    "amount": 520,
-    "description": "New cashflow"
+    "amount": 520.50,
+    "description": "New cashflow entry",
+    "date": "2025-01-08T10:30:00Z"
 }
 
-###
-
-PUT {{host}}/cash/update
+### Update cashflow
+PUT {{host}}/cash/46e6ab5c-7284-11f0-b194-faeb89bbec92
 Content-Type: application/json
-Authorization: Bearer {{access_token}}
+Authorization: Bearer {{login.response.body.data.token}}
 
 {
-    "cashflowId": "e82761e1-e50d-11ef-8564-0252ac110002",
-    "amount": 150,
-    "description": "Updated cashflow"
+    "amount": 30.5,
+    "description": "Updated cashflow entry"
 }
 
-###
-
-DELETE {{host}}/cash/delete
-Content-Type: application/json
-Authorization: Bearer {{access_token}}
-
-{
-    "cashflowId": "512c7eb8-f40b-11ef-a2b2-0242ac110002"
-}
+### Delete cashflow
+DELETE {{host}}/cash/46e6ab5c-7284-11f0-b194-faeb89bbec92
+Authorization: Bearer {{login.response.body.data.token}}
