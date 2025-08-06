@@ -28,5 +28,10 @@ CREATE TABLE IF NOT EXISTS cashflow_data (
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user_data(id) ON DELETE CASCADE
 );
 
--- Create a dummy user
+-- Create performance indexes
+CREATE INDEX IF NOT EXISTS idx_cashflow_user_time ON cashflow_data(user_id, time DESC);
+CREATE INDEX IF NOT EXISTS idx_user_username ON user_data(user_name(50));
+CREATE INDEX IF NOT EXISTS idx_cashflow_user_id ON cashflow_data(user_id);
+
+-- Create a dummy user (password: 'password')
 INSERT INTO user_data (user_name, password_hash) VALUES ('user1', '$2b$12$ZnOatuXNV4PlSGI63TXAS.VlAIBEc3CRnqb.GmSNBXdVkDzCJi9jW');

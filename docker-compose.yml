@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # WIMM Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: wimm-api
+    restart: unless-stopped
+    ports:
+      - '3010:3010'
+    environment:
+      - NODE_ENV=production
+      - PORT=3010
+      - DB_SERVER=mysql
+      - DB_USER=wimm_user
+      - DB_PASSWORD=secure_password_change_me
+      - DB_NAME=wimm
+      - DB_PORT=3306
+      - JWT_SECRET=your-super-secure-jwt-secret-key-that-is-at-least-32-characters-long-change-me
+      - JWT_EXPIRES_IN=24h
+      - SALT_ROUNDS=12
+      - LOG_LEVEL=info
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./logs:/usr/src/app/logs
+    networks:
+      - wimm-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3010/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: wimm-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password_change_me
+      - MYSQL_DATABASE=wimm
+      - MYSQL_USER=wimm_user
+      - MYSQL_PASSWORD=secure_password_change_me
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./migrations:/docker-entrypoint-initdb.d/migrations:ro
+    networks:
+      - wimm-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'root',
+          '-p$$MYSQL_ROOT_PASSWORD',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis (for future caching/session storage)
+  redis:
+    image: redis:7-alpine
+    container_name: wimm-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - wimm-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  wimm-network:
+    driver: bridge

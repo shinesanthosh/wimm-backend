@@ -1,0 +1,45 @@
+# Development Dockerfile for WIMM Backend
+# Optimized for development with hot reload and debugging
+
+FROM node:20.12.2-alpine as development
+
+# Install development tools
+RUN apk update && apk upgrade && \
+    apk add --no-cache dumb-init git && \
+    rm -rf /var/cache/apk/*
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S wimm -u 1001
+
+# Copy package files
+COPY package.json yarn.lock tsconfig.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN yarn install --frozen-lockfile
+
+# Create logs directory
+RUN mkdir -p logs && \
+    chown -R wimm:nodejs /usr/src/app
+
+# Switch to non-root user
+USER wimm
+
+# Copy source code (will be overridden by volume in docker-compose)
+COPY --chown=wimm:nodejs . .
+
+# Expose ports
+EXPOSE 3010 9229
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3010/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Default command (can be overridden in docker-compose)
+CMD ["yarn", "dev"]

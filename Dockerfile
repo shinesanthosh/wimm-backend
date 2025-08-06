@@ -1,72 +1,89 @@
 # syntax=docker/dockerfile:1
 
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Dockerfile reference guide at
-# https://docs.docker.com/go/dockerfile-reference/
-
-# Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
+# WIMM Backend - Production Docker Image
+# Multi-stage build for optimized production deployment
 
 ARG NODE_VERSION=20.12.2
 
 ################################################################################
-# Use node image for base image for all stages.
+# Base stage with common setup
 FROM node:${NODE_VERSION}-alpine as base
 
-# Set working directory for all build stages.
+# Install security updates and required packages
+RUN apk update && apk upgrade && \
+    apk add --no-cache dumb-init && \
+    rm -rf /var/cache/apk/*
+
+# Set working directory
 WORKDIR /usr/src/app
 
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S wimm -u 1001
 
 ################################################################################
-# Create a stage for installing production dependecies.
+# Dependencies stage - install production dependencies
 FROM base as deps
 
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.yarn to speed up subsequent builds.
-# Leverage bind mounts to package.json and yarn.lock to avoid having to copy them
-# into this layer.
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=yarn.lock,target=yarn.lock \
-    --mount=type=cache,target=/root/.yarn \
-    yarn install --production --frozen-lockfile
+# Copy package files
+COPY package.json yarn.lock ./
+
+# Install production dependencies with cache optimization
+RUN --mount=type=cache,target=/root/.yarn \
+    yarn install --production --frozen-lockfile --silent && \
+    yarn cache clean
 
 ################################################################################
-# Create a stage for building the application.
-FROM deps as build
+# Build stage - compile TypeScript
+FROM base as build
 
-# Download additional development dependencies before building, as some projects require
-# "devDependencies" to be installed to build. If you don't need this, remove this step.
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=yarn.lock,target=yarn.lock \
-    --mount=type=cache,target=/root/.yarn \
-    yarn install --frozen-lockfile
+# Copy package files
+COPY package.json yarn.lock tsconfig.json ./
 
-# Copy the rest of the source files into the image.
-COPY . .
-# Run the build script.
-RUN yarn run build
+# Install all dependencies (including dev dependencies for build)
+RUN --mount=type=cache,target=/root/.yarn \
+    yarn install --frozen-lockfile --silent
+
+# Copy source code
+COPY src/ ./src/
+
+# Build the application
+RUN yarn build && \
+    rm -rf src/ node_modules/
 
 ################################################################################
-# Create a new stage to run the application with minimal runtime dependencies
-# where the necessary files are copied from the build stage.
-FROM base as final
+# Production stage - minimal runtime image
+FROM base as production
 
-# Use production node environment by default.
-ENV NODE_ENV production
+# Set production environment
+ENV NODE_ENV=production
+ENV PORT=3010
 
-# Run the application as a non-root user.
-USER node
+# Create logs directory
+RUN mkdir -p /usr/src/app/logs && \
+    chown -R wimm:nodejs /usr/src/app
 
-# Copy package.json so that package manager commands can be used.
-COPY package.json .
+# Switch to non-root user
+USER wimm
 
-# Copy the production dependencies from the deps stage and also
-# the built application from the build stage into the image.
-COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/dist ./dist
+# Copy package.json for runtime
+COPY --chown=wimm:nodejs package.json ./
 
+# Copy production dependencies from deps stage
+COPY --from=deps --chown=wimm:nodejs /usr/src/app/node_modules ./node_modules
 
-# Expose the port that the application listens on.
-EXPOSE 3000
+# Copy built application from build stage
+COPY --from=build --chown=wimm:nodejs /usr/src/app/dist ./dist
 
-# Run the application.
-CMD yarn start
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3010/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Expose port
+EXPOSE 3010
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["yarn", "start"]
