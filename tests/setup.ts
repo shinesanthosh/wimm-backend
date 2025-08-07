@@ -18,3 +18,17 @@ global.console = {
   warn: jest.fn(),
   error: jest.fn(),
 }
+
+// Increase test timeout for database operations
+jest.setTimeout(30000)
+
+// Setup and teardown
+beforeAll(async () => {
+  // Wait a bit for any previous tests to finish
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+})
+
+afterAll(async () => {
+  // Clean up any open handles
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+})

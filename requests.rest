@@ -10,6 +10,16 @@ GET {{host}}/health/ready
 ### API Documentation (Development only)
 GET {{host}}/api-docs
 
+### Signup
+# @name signup
+POST {{host}}/user/signup
+Content-Type: application/json
+
+{
+    "username": "newuser",
+    "password": "password123"
+}
+
 ### Login
 # @name login
 POST {{host}}/user/login

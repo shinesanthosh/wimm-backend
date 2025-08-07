@@ -1,10 +1,8 @@
--- Create the wimm database 
-CREATE DATABASE IF NOT EXISTS wimm;
+-- Create test database
+CREATE DATABASE IF NOT EXISTS wimm_test;
 
--- Use the wimm database
-use wimm;
-
--- Queries for initializing the database
+-- Use the test database
+USE wimm_test;
 
 -- The user data
 -- Create the user_data table
@@ -14,7 +12,6 @@ CREATE TABLE IF NOT EXISTS user_data (
     password_hash CHAR(60) NOT NULL,
     PRIMARY KEY (id)
 );
-
 
 -- The cashflow data
 -- Create the cashflow_data table
@@ -30,8 +27,8 @@ CREATE TABLE IF NOT EXISTS cashflow_data (
 
 -- Create performance indexes
 CREATE INDEX IF NOT EXISTS idx_cashflow_user_time ON cashflow_data(user_id, time DESC);
-CREATE INDEX IF NOT EXISTS idx_user_username ON user_data(user_name(50));
+CREATE INDEX IF NOT EXISTS idx_user_username ON user_data(user_name);
 CREATE INDEX IF NOT EXISTS idx_cashflow_user_id ON cashflow_data(user_id);
 
--- Create a dummy user (password: 'password')
-INSERT INTO user_data (user_name, password_hash) VALUES ('user1', '$2b$12$ZnOatuXNV4PlSGI63TXAS.VlAIBEc3CRnqb.GmSNBXdVkDzCJi9jW');
+-- Create a test user (password: 'password')
+INSERT IGNORE INTO user_data (user_name, password_hash) VALUES ('user1', '$2b$12$ZnOatuXNV4PlSGI63TXAS.VlAIBEc3CRnqb.GmSNBXdVkDzCJi9jW');

@@ -5,13 +5,17 @@ A production-ready personal expense tracking API built with Node.js, TypeScript,
 ## ✨ Features
 
 ### 🔐 **Security & Authentication**
+
+- User registration with username uniqueness validation
 - JWT-based authentication with secure token management
 - Token blacklist system for proper logout security
 - Rate limiting to prevent abuse
 - Security headers (Helmet.js) with CSP, HSTS, and more
 - Input validation and sanitization with Zod schemas
+- Password hashing with bcrypt and configurable salt rounds
 
 ### 📊 **Expense Management**
+
 - Create, read, update, and delete expense entries
 - Automatic expense categorization and summation
 - Pagination support for large datasets
@@ -19,6 +23,7 @@ A production-ready personal expense tracking API built with Node.js, TypeScript,
 - Date-based expense filtering
 
 ### 🛠️ **Developer Experience**
+
 - Comprehensive OpenAPI/Swagger documentation
 - Structured logging with Winston
 - Type-safe API with TypeScript
@@ -26,6 +31,7 @@ A production-ready personal expense tracking API built with Node.js, TypeScript,
 - Hot reload development environment
 
 ### 🚀 **Production Ready**
+
 - Health check endpoints for monitoring
 - Graceful shutdown handling
 - Database connection pooling with retry logic
@@ -53,11 +59,13 @@ src/
 ## 🚀 **Quick Start**
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - MySQL 8.0+
 - Yarn package manager
 
 ### 1. Clone and Install
+
 ```bash
 git clone https://github.com/your-username/wimm-backend.git
 cd wimm-backend
@@ -65,6 +73,7 @@ yarn install
 ```
 
 ### 2. Environment Setup
+
 ```bash
 # Copy environment template
 cp .env.example .env.local
@@ -74,6 +83,7 @@ nano .env.local
 ```
 
 ### 3. Database Setup
+
 ```bash
 # Create database and run initial schema
 mysql -u root -p < init.sql
@@ -83,38 +93,43 @@ mysql -u root -p wimm < migrations/001_add_indexes.sql
 ```
 
 ### 4. Start Development Server
+
 ```bash
 yarn dev
 ```
 
 The API will be available at `http://localhost:3010`
+
 - **API Documentation**: `http://localhost:3010/api-docs`
 - **Health Check**: `http://localhost:3010/health`
 
 ## 📋 **Environment Variables**
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `NODE_ENV` | Environment (development/production/test) | `development` | ✅ |
-| `PORT` | Server port | `3010` | ✅ |
-| `DB_SERVER` | MySQL host | `localhost` | ✅ |
-| `DB_USER` | MySQL username | - | ✅ |
-| `DB_PASSWORD` | MySQL password | - | ✅ |
-| `DB_NAME` | Database name | `wimm` | ✅ |
-| `DB_PORT` | MySQL port | `3306` | ✅ |
-| `JWT_SECRET` | JWT signing secret (32+ chars) | - | ✅ |
-| `JWT_EXPIRES_IN` | Token expiration time | `1h` | ✅ |
-| `SALT_ROUNDS` | bcrypt salt rounds | `12` | ✅ |
-| `LOG_LEVEL` | Logging level | `info` | ❌ |
+| Variable         | Description                               | Default       | Required |
+| ---------------- | ----------------------------------------- | ------------- | -------- |
+| `NODE_ENV`       | Environment (development/production/test) | `development` | ✅       |
+| `PORT`           | Server port                               | `3010`        | ✅       |
+| `DB_SERVER`      | MySQL host                                | `localhost`   | ✅       |
+| `DB_USER`        | MySQL username                            | -             | ✅       |
+| `DB_PASSWORD`    | MySQL password                            | -             | ✅       |
+| `DB_NAME`        | Database name                             | `wimm`        | ✅       |
+| `DB_PORT`        | MySQL port                                | `3306`        | ✅       |
+| `JWT_SECRET`     | JWT signing secret (32+ chars)            | -             | ✅       |
+| `JWT_EXPIRES_IN` | Token expiration time                     | `1h`          | ✅       |
+| `SALT_ROUNDS`    | bcrypt salt rounds                        | `12`          | ✅       |
+| `LOG_LEVEL`      | Logging level                             | `info`        | ❌       |
 
 ## 🔌 **API Endpoints**
 
 ### Authentication
+
+- `POST /user/signup` - User registration
 - `POST /user/login` - User login
 - `GET /user/me` - Get current user info
 - `POST /user/logout` - Logout and invalidate token
 
 ### Expense Management
+
 - `GET /cash?page=1&limit=10` - Get paginated expenses
 - `POST /cash` - Create new expense
 - `GET /cash/:id` - Get specific expense
@@ -122,11 +137,31 @@ The API will be available at `http://localhost:3010`
 - `DELETE /cash/:id` - Delete expense
 
 ### System
+
 - `GET /health` - Health check
 - `GET /health/ready` - Readiness probe
 - `GET /api-docs` - API documentation (dev only)
 
 ## 🧪 **Testing**
+
+### Prerequisites
+
+Before running tests, ensure you have:
+
+1. MySQL server running locally
+2. Test database set up
+
+### Database Setup for Testing
+
+```bash
+# Setup test database (requires MySQL running)
+./scripts/setup-test-db.sh
+
+# Or manually:
+mysql -u root -p < tests/setup-db.sql
+```
+
+### Running Tests
 
 ```bash
 # Run all tests
@@ -137,11 +172,31 @@ yarn test:watch
 
 # Generate coverage report
 yarn test:coverage
+
+# Run specific test file
+yarn test tests/routes/user.test.ts
 ```
+
+### Test Configuration
+
+- Tests use a separate `wimm_test` database
+- Rate limiting is configured for test environment
+- Tests run sequentially to avoid conflicts
+- Database connections are properly cleaned up
+
+### Troubleshooting Tests
+
+If tests fail with database errors:
+
+1. Ensure MySQL is running: `brew services start mysql` (macOS) or `sudo service mysql start` (Linux)
+2. Create test database: `mysql -u root -p -e "CREATE DATABASE wimm_test;"`
+3. Run database setup: `./scripts/setup-test-db.sh`
+4. Check database credentials in `.env.test`
 
 ## 🐳 **Docker Deployment**
 
 ### Build and Run
+
 ```bash
 # Build the image
 docker build -t wimm-backend .
@@ -156,6 +211,7 @@ docker run -p 3010:3010 \
 ```
 
 ### Docker Compose (Recommended)
+
 ```bash
 # Start all services
 docker-compose up -d
@@ -170,6 +226,7 @@ docker-compose down
 ## 📊 **Database Schema**
 
 ### Users Table (`user_data`)
+
 ```sql
 CREATE TABLE user_data (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -180,6 +237,7 @@ CREATE TABLE user_data (
 ```
 
 ### Expenses Table (`cashflow_data`)
+
 ```sql
 CREATE TABLE cashflow_data (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -195,12 +253,14 @@ CREATE TABLE cashflow_data (
 ## 🔧 **Development**
 
 ### Project Structure
+
 - **Routes**: Handle HTTP requests and responses
 - **Services**: Business logic and data operations
 - **Middleware**: Request processing (auth, validation, logging)
 - **Utils**: Shared utilities (logging, errors, validation)
 
 ### Code Quality
+
 - TypeScript for type safety
 - ESLint and Prettier for code formatting
 - Comprehensive error handling
@@ -208,6 +268,7 @@ CREATE TABLE cashflow_data (
 - Input validation on all endpoints
 
 ### Adding New Features
+
 1. Define TypeScript interfaces in `/types`
 2. Create Zod validation schemas in `/validation`
 3. Implement business logic in `/services`
@@ -218,16 +279,19 @@ CREATE TABLE cashflow_data (
 ## 📈 **Monitoring & Observability**
 
 ### Health Checks
+
 - `GET /health` - Overall system health
 - `GET /health/ready` - Kubernetes readiness probe
 
 ### Logging
+
 - Structured JSON logging with Winston
 - Request/response logging with performance metrics
 - Error tracking with stack traces
 - Log rotation and file management
 
 ### Metrics
+
 - Request duration tracking
 - Error rate monitoring
 - Database connection health
@@ -236,6 +300,7 @@ CREATE TABLE cashflow_data (
 ## 🚀 **Production Deployment**
 
 ### Environment Setup
+
 1. Set `NODE_ENV=production`
 2. Use strong JWT secrets (32+ characters)
 3. Configure proper database credentials
@@ -243,6 +308,7 @@ CREATE TABLE cashflow_data (
 5. Configure reverse proxy (nginx)
 
 ### Security Checklist
+
 - ✅ Environment variables secured
 - ✅ Database credentials encrypted
 - ✅ JWT secrets rotated regularly
@@ -253,6 +319,7 @@ CREATE TABLE cashflow_data (
 - ✅ XSS protection enabled
 
 ### Performance Optimization
+
 - Database indexes on frequently queried columns
 - Connection pooling with proper limits
 - Request/response compression
@@ -268,6 +335,7 @@ CREATE TABLE cashflow_data (
 5. Open a Pull Request
 
 ### Development Guidelines
+
 - Follow TypeScript best practices
 - Write comprehensive tests
 - Update documentation

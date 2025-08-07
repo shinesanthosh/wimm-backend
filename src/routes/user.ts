@@ -1,15 +1,20 @@
 import express, { Request, Response } from 'express'
-import { authenticate } from '../auth'
+import { authenticate, register } from '../auth'
 import { JwtPayload } from 'jsonwebtoken'
 import { verifyToken } from '../auth/authorization'
 import { validateRequest } from '../middleware/validation'
-import { loginSchema } from '../validation/schemas'
+import { loginSchema, registerSchema } from '../validation/schemas'
 import { authLimiter } from '../middleware/security'
 import { asyncHandler } from '../utils/errorHandlers'
-import { AuthenticationError, AuthorizationError } from '../utils/errors'
+import {
+  AuthenticationError,
+  AuthorizationError,
+  ConflictError,
+} from '../utils/errors'
 import { ApiResponse } from '../types/api'
 import config from '../config'
 import { addToBlacklist, isBlacklisted } from '../utils/tokenBlacklist'
+import { getUserByUsername } from '../services/user'
 
 const router = express.Router()
 
@@ -171,6 +176,82 @@ router.post(
     }
 
     res.json(response)
+  })
+)
+
+/**
+ * @swagger
+ * /user/signup:
+ *   post:
+ *     summary: User registration
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       201:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *                         token:
+ *                           type: string
+ *       400:
+ *         description: Invalid input data
+ *       409:
+ *         description: Username already exists
+ *       429:
+ *         description: Too many registration attempts
+ */
+router.post(
+  '/signup',
+  authLimiter,
+  validateRequest(registerSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { username, password } = req.body
+
+    // Check if username already exists
+    const existingUser = await getUserByUsername(username)
+    if (existingUser) {
+      throw new ConflictError('Username already exists')
+    }
+
+    // Register the new user
+    await register(username, password)
+
+    // Authenticate the new user to get a token
+    const result = await authenticate(username, password)
+    if (!result) {
+      throw new Error('Failed to authenticate newly created user')
+    }
+
+    // Set secure cookie
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: config.NODE_ENV === 'production',
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    })
+
+    const response: ApiResponse = {
+      success: true,
+      data: result,
+      message: 'Registration successful',
+    }
+
+    res.status(201).json(response)
   })
 )
 

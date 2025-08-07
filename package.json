@@ -10,7 +10,8 @@
     "build": "tsc -p .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest --testNamePattern='should return 400|should return 404' --verbose"
   },
   "dependencies": {
     "@types/bcrypt": "^5.0.2",

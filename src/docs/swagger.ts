@@ -90,6 +90,24 @@ const options = {
             },
           },
         },
+        RegisterRequest: {
+          type: 'object',
+          required: ['username', 'password'],
+          properties: {
+            username: {
+              type: 'string',
+              minLength: 3,
+              maxLength: 50,
+              description: 'Username must be between 3 and 50 characters',
+            },
+            password: {
+              type: 'string',
+              minLength: 6,
+              maxLength: 100,
+              description: 'Password must be between 6 and 100 characters',
+            },
+          },
+        },
         CreateCashflowRequest: {
           type: 'object',
           required: ['amount'],
